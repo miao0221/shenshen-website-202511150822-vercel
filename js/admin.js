@@ -28,13 +28,25 @@
 
     // 存储桶存在性缓存
     const bucketCache = new Map();
+    // 缓存过期时间（5分钟）
+    const CACHE_EXPIRY = 5 * 60 * 1000;
     
     // 检查存储桶是否存在
     async function checkBucketExists(bucketName) {
         try {
-            // 检查缓存
+            // 检查缓存（带过期时间）
             if (bucketCache.has(bucketName)) {
-                return bucketCache.get(bucketName);
+                const cached = bucketCache.get(bucketName);
+                if (Date.now() - cached.timestamp < CACHE_EXPIRY) {
+                    console.log(`从缓存中获取存储桶状态: ${bucketName}`, cached.exists);
+                    if (cached.exists) {
+                        return true;
+                    }
+                    // 即使缓存中不存在，也继续执行实际检查以确认
+                } else {
+                    // 缓存过期，清除
+                    bucketCache.delete(bucketName);
+                }
             }
             
             console.log(`正在检查存储桶是否存在: ${bucketName}`);
@@ -44,6 +56,12 @@
             
             if (listError) {
                 console.error('获取存储桶列表失败:', listError.message);
+                // 特别处理网络连接问题
+                if (listError.message.includes('Failed to fetch') || listError.message.includes('NetworkError')) {
+                    const errorMsg = '网络连接失败，请检查网络设置或稍后重试';
+                    throw new Error(errorMsg);
+                }
+                
                 const errorMsg = `无法连接到存储服务: ${listError.message}`;
                 throw new Error(errorMsg);
             }
@@ -54,14 +72,28 @@
                 throw new Error(errorMsg);
             }
             
+            console.log('获取到的存储桶列表:', buckets.map(b => b.name));
+            
             // 检查存储桶是否存在
             const bucketExists = buckets.some(bucket => bucket.name === bucketName);
             
-            // 缓存结果
-            bucketCache.set(bucketName, bucketExists);
+            // 缓存结果（带时间戳）
+            bucketCache.set(bucketName, {
+                exists: bucketExists,
+                timestamp: Date.now()
+            });
             
             if (!bucketExists) {
-                const errorMsg = `存储桶 "${bucketName}" 不存在，请在 Supabase 后台创建该存储桶。可用的存储桶: ${buckets.map(b => b.name).join(', ')}`;
+                // 提供更详细的错误信息和创建指导
+                const bucketNames = buckets.map(b => b.name).join(', ') || '无';
+                const errorMsg = `存储桶 "${bucketName}" 不存在，请在 Supabase 后台 Storage 页面创建该存储桶。\n` +
+                                `当前可用的存储桶: ${bucketNames}\n\n` +
+                                `创建步骤:\n` +
+                                `1. 登录 Supabase 控制台\n` +
+                                `2. 进入 Storage 页面\n` +
+                                `3. 点击 "Create bucket" 按钮\n` +
+                                `4. 输入存储桶名称 "${bucketName}" 并创建\n` +
+                                `5. 将存储桶设置为 Public 访问权限`;
                 console.warn(errorMsg);
                 throw new Error(errorMsg);
             }
@@ -72,6 +104,12 @@
             console.error('检查存储桶时发生错误:', error.message);
             // 清除可能的脏缓存
             bucketCache.delete(bucketName);
+            
+            // 提供更友好的错误信息
+            if (error.message.includes('Invalid authentication credentials')) {
+                throw new Error('认证失败，请检查 Supabase 配置中的密钥是否正确');
+            }
+            
             throw error;
         }
     }
@@ -513,6 +551,15 @@
                 .upload(fileName, file, uploadOptions);
             
             if (error) {
+                // 特别处理常见错误
+                if (error.message.includes('duplicate key value violates unique constraint')) {
+                    throw new Error('文件名冲突，请稍后重试或更改文件名');
+                }
+                
+                if (error.message.includes('permission denied')) {
+                    throw new Error('权限不足，无法上传文件到存储桶');
+                }
+                
                 throw new Error('文件上传失败: ' + error.message);
             }
             
