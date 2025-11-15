@@ -13,22 +13,8 @@
                 throw new Error(error.message || '注册过程中发生未知错误');
             }
             
-            // 如果注册成功且返回了用户ID，则在profiles表中创建记录
-            if (data.user && data.user.id) {
-                const { error: profileError } = await window.App.supabase
-                    .from('profiles')
-                    .insert([
-                        {
-                            user_id: data.user.id,
-                            is_admin: false // 默认不是管理员
-                        }
-                    ]);
-                
-                if (profileError) {
-                    console.error('创建用户档案失败:', profileError.message);
-                    // 注意：即使创建档案失败，用户仍可能已成功注册
-                }
-            }
+            // 注意：profiles记录现在通过数据库触发器自动创建
+            // 我们不再需要手动在profiles表中创建记录
             
             console.log('注册成功:', data.user);
             return data.user; // 返回用户对象
@@ -97,14 +83,19 @@
         try {
             console.log('正在检查用户管理员权限:', userId);
             
+            // 修复列名错误：使用'id'而不是'user_id'
             const { data, error } = await window.App.supabase
                 .from('profiles')
                 .select('is_admin')
-                .eq('user_id', userId)
+                .eq('id', userId)  // 修复：使用正确的列名'id'
                 .single();
             
             if (error) {
                 console.error('检查管理员权限失败:', error.message);
+                // 如果是因为表不存在导致的错误，给出更友好的提示
+                if (error.message.includes('relation') && error.message.includes('does not exist')) {
+                    console.error('profiles表不存在，请运行README.md中的SQL语句创建表和触发器');
+                }
                 return false;
             }
             

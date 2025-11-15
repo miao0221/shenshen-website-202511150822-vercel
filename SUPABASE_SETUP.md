@@ -31,7 +31,7 @@ CREATE POLICY "仅允许管理员插入音乐" ON music
   FOR INSERT WITH CHECK (
     EXISTS (
       SELECT 1 FROM profiles
-      WHERE user_id = auth.uid() AND is_admin = true
+      WHERE id = auth.uid() AND is_admin = true
     )
   );
 
@@ -40,7 +40,7 @@ CREATE POLICY "仅允许管理员更新音乐" ON music
   FOR UPDATE USING (
     EXISTS (
       SELECT 1 FROM profiles
-      WHERE user_id = auth.uid() AND is_admin = true
+      WHERE id = auth.uid() AND is_admin = true
     )
   );
 
@@ -49,7 +49,7 @@ CREATE POLICY "仅允许管理员删除音乐" ON music
   FOR DELETE USING (
     EXISTS (
       SELECT 1 FROM profiles
-      WHERE user_id = auth.uid() AND is_admin = true
+      WHERE id = auth.uid() AND is_admin = true
     )
   );
 ```
@@ -83,7 +83,7 @@ CREATE POLICY "仅允许管理员插入视频" ON videos
   FOR INSERT WITH CHECK (
     EXISTS (
       SELECT 1 FROM profiles
-      WHERE user_id = auth.uid() AND is_admin = true
+      WHERE id = auth.uid() AND is_admin = true
     )
   );
 
@@ -92,7 +92,7 @@ CREATE POLICY "仅允许管理员更新视频" ON videos
   FOR UPDATE USING (
     EXISTS (
       SELECT 1 FROM profiles
-      WHERE user_id = auth.uid() AND is_admin = true
+      WHERE id = auth.uid() AND is_admin = true
     )
   );
 
@@ -101,39 +101,79 @@ CREATE POLICY "仅允许管理员删除视频" ON videos
   FOR DELETE USING (
     EXISTS (
       SELECT 1 FROM profiles
-      WHERE user_id = auth.uid() AND is_admin = true
+      WHERE id = auth.uid() AND is_admin = true
     )
   );
 ```
 
-## 3. 插入示例数据
+## 3. 创建 `profiles` 表
 
-创建表后，您可以插入一些示例数据来测试网站功能：
+在 Supabase SQL 编辑器中运行以下 SQL 语句：
 
 ```sql
--- 插入音乐示例数据
-INSERT INTO music (title, description, audio_url, cover_url, created_by) VALUES
-  ('大鱼', '动画电影《大鱼海棠》印象曲', 'https://example.com/music/dayu.mp3', 'https://example.com/images/dayu.jpg', NULL),
-  ('光亮', '纪录片《紫禁城》主题曲', 'https://example.com/music/guangliang.mp3', 'https://example.com/images/guangliang.jpg', NULL),
-  ('起风了', '热门翻唱作品', 'https://example.com/music/qifengle.mp3', 'https://example.com/images/qifengle.jpg', NULL);
+-- 创建 profiles 表
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id),
+  email VARCHAR(255),
+  is_admin BOOLEAN DEFAULT FALSE
+);
 
--- 插入视频示例数据
-INSERT INTO videos (title, description, video_url, thumbnail_url, created_by) VALUES
-  ('周深现场演唱《大鱼》', '周深在某音乐节目现场演唱《大鱼》', 'https://example.com/videos/dayu.mp4', 'https://example.com/images/dayu_video.jpg', NULL),
-  ('周深采访片段', '周深接受媒体采访的精彩片段', 'https://example.com/videos/interview.mp4', 'https://example.com/images/interview.jpg', NULL),
-  ('周深MV合集', '周深历年来的音乐视频合集', 'https://example.com/videos/mv_collection.mp4', 'https://example.com/images/mv_collection.jpg', NULL);
+-- 为 profiles 表启用行级安全策略（RLS）
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- 为 profiles 表创建策略
+-- 允许用户查看自己的信息
+CREATE POLICY "允许用户查看自己的信息" ON profiles
+  FOR SELECT USING (id = auth.uid());
 ```
 
-## 4. 验证设置
+## 4. 创建自动创建 profiles 记录的函数和触发器
 
-创建表和策略后，您可以执行以下操作来验证设置是否正确：
+```sql
+-- 创建函数：当新用户注册时自动创建profiles记录
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, is_admin)
+  VALUES (NEW.id, NEW.email, FALSE);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-1. 以普通用户身份查询数据，应能成功获取音乐和视频列表
-2. 以普通用户身份尝试插入数据，应被拒绝
-3. 以管理员身份尝试插入数据，应能成功
+-- 创建触发器
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+```
 
-## 5. 注意事项
+## 5. 示例数据
 
-1. 确保您已经创建了 `profiles` 表并设置了相应的管理员权限
-2. 确保您的 Supabase 项目已正确配置，并且前端代码中的 SUPABASE_URL 和 SUPABASE_ANON_KEY 是正确的
-3. 示例数据中的 URL 需要替换为实际可用的资源链接
+以下是一些示例数据，您可以根据需要修改：
+
+### 音乐示例数据
+
+```sql
+INSERT INTO music (title, description, audio_url, cover_url, created_by) VALUES
+('大鱼', '动画电影《大鱼海棠》印象曲', 'https://example.com/dayu.mp3', 'https://example.com/dayu.jpg', '00000000-0000-0000-0000-000000000000'),
+('光亮', '纪录片《紫禁城》主题曲', 'https://example.com/guangliang.mp3', 'https://example.com/guangliang.jpg', '00000000-0000-0000-0000-000000000000');
+```
+
+### 视频示例数据
+
+```sql
+INSERT INTO videos (title, description, video_url, thumbnail_url, created_by) VALUES
+('周深现场演唱《大鱼》', '周深在音乐节现场演唱《大鱼》', 'https://example.com/dayu_concert.mp4', 'https://example.com/dayu_concert_thumb.jpg', '00000000-0000-0000-0000-000000000000'),
+('周深访谈节目', '周深参加某访谈节目的精彩片段', 'https://example.com/interview.mp4', 'https://example.com/interview_thumb.jpg', '00000000-0000-0000-0000-000000000000');
+```
+
+## 6. 设置管理员用户
+
+将特定用户设置为管理员：
+
+```sql
+UPDATE profiles 
+SET is_admin = TRUE 
+WHERE email = '1046781739@qq.com';
+```
+
+请将 `1046781739@qq.com` 替换为您要设置为管理员的实际用户邮箱。
