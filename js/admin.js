@@ -26,6 +26,34 @@
         }
     }
 
+    // 检查存储桶是否存在
+    async function checkBucketExists(bucketName) {
+        try {
+            console.log(`正在检查存储桶是否存在: ${bucketName}`);
+            
+            // 获取存储桶列表
+            const { data: buckets, error: listError } = await window.App.supabase.storage.listBuckets();
+            
+            if (listError) {
+                console.error('获取存储桶列表失败:', listError.message);
+                throw new Error('获取存储桶列表失败: ' + listError.message);
+            }
+            
+            // 检查存储桶是否存在
+            const bucketExists = buckets.some(bucket => bucket.name === bucketName);
+            
+            if (!bucketExists) {
+                throw new Error(`存储桶 "${bucketName}" 不存在，请在 Supabase 后台创建该存储桶`);
+            }
+            
+            console.log(`存储桶 ${bucketName} 存在`);
+            return true;
+        } catch (error) {
+            console.error('检查存储桶时发生错误:', error.message);
+            throw error;
+        }
+    }
+
     // 渲染音乐管理表格
     function renderMusicManagementTable(musicData) {
         const container = document.getElementById('music-management-table');
@@ -63,10 +91,7 @@
             html += `
                 <tr>
                     <td>
-                        <img src="${music.cover_url || 'https://placehold.co/50x50/e6f0ff/2c5aa0?text=封面'}" 
-                             alt="${music.title}" 
-                             style="width: 50px; height: 50px; object-fit: cover;" 
-                             onerror="this.src='https://placehold.co/50x50/e6f0ff/2c5aa0?text=封面'">
+                        <img src="${music.cover_url || 'https://via.placeholder.com/50'}" alt="${music.title}" class="media-table-cover">
                     </td>
                     <td>${music.title}</td>
                     <td>${music.description || '无描述'}</td>
@@ -123,10 +148,7 @@
             html += `
                 <tr>
                     <td>
-                        <img src="${video.thumbnail_url || 'https://placehold.co/50x50/e6f0ff/2c5aa0?text=缩略图'}" 
-                             alt="${video.title}" 
-                             style="width: 50px; height: 50px; object-fit: cover;" 
-                             onerror="this.src='https://placehold.co/50x50/e6f0ff/2c5aa0?text=缩略图'">
+                        <img src="${video.thumbnail_url || 'https://via.placeholder.com/50'}" alt="${video.title}" class="media-table-cover">
                     </td>
                     <td>${video.title}</td>
                     <td>${video.description || '无描述'}</td>
@@ -144,6 +166,82 @@
         `;
         
         container.innerHTML = html;
+    }
+
+    // 显示加载指示器
+    function showLoading(containerId) {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = '<div class="loading-indicator">加载中...</div>';
+        }
+    }
+
+    // 显示错误信息
+    function showError(containerId, message) {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = `<div class="error-message">错误: ${message}</div>`;
+        }
+    }
+
+    // 显示通知消息
+    function showNotification(elementId, message, isSuccess = true) {
+        const notification = document.getElementById(elementId);
+        if (!notification) {
+            console.error('找不到通知元素:', elementId);
+            return;
+        }
+        
+        notification.textContent = message;
+        notification.className = `notification ${isSuccess ? 'success' : 'error'}`;
+        
+        // 3秒后隐藏通知
+        setTimeout(() => {
+            notification.className = 'notification';
+            notification.textContent = '';
+        }, 3000);
+    }
+
+    // 加载音乐管理数据
+    async function loadMusicManagementData() {
+        try {
+            showLoading('music-management-table');
+            
+            const { data, error } = await window.App.supabase
+                .from('music')
+                .select('*')
+                .order('created_at', { ascending: false });
+            
+            if (error) {
+                throw new Error('获取音乐数据失败: ' + error.message);
+            }
+            
+            renderMusicManagementTable(data);
+        } catch (error) {
+            console.error('加载音乐管理数据时发生错误:', error.message);
+            showError('music-management-table', error.message);
+        }
+    }
+
+    // 加载视频管理数据
+    async function loadVideoManagementData() {
+        try {
+            showLoading('video-management-table');
+            
+            const { data, error } = await window.App.supabase
+                .from('videos')
+                .select('*')
+                .order('created_at', { ascending: false });
+            
+            if (error) {
+                throw new Error('获取视频数据失败: ' + error.message);
+            }
+            
+            renderVideoManagementTable(data);
+        } catch (error) {
+            console.error('加载视频管理数据时发生错误:', error.message);
+            showError('video-management-table', error.message);
+        }
     }
 
     // 删除音乐
@@ -193,7 +291,7 @@
                 const coverPath = new URL(music.cover_url).pathname.substring(1); // 移除开头的斜杠
                 const { error: coverDeleteError } = await window.App.supabase
                     .storage
-                    .from('music')
+                    .from('images')
                     .remove([coverPath]);
                 
                 if (coverDeleteError) {
@@ -256,7 +354,7 @@
                 const thumbnailPath = new URL(video.thumbnail_url).pathname.substring(1); // 移除开头的斜杠
                 const { error: thumbnailDeleteError } = await window.App.supabase
                     .storage
-                    .from('videos')
+                    .from('images')
                     .remove([thumbnailPath]);
                 
                 if (thumbnailDeleteError) {
@@ -277,23 +375,38 @@
         try {
             console.log('正在上传文件到存储桶:', bucket, file.name);
             
+            // 检查存储桶是否存在
+            await checkBucketExists(bucket);
+            
             const fileName = `${Date.now()}_${file.name}`;
+            
+            // 准备上传选项
+            const uploadOptions = {
+                cacheControl: '3600',
+                upsert: false
+            };
+            
+            // 如果提供了进度回调，则添加到选项中
+            if (onProgress) {
+                uploadOptions.onUploadProgress = onProgress;
+            }
+            
             const { data, error } = await window.App.supabase.storage
                 .from(bucket)
-                .upload(fileName, file, {
-                    cacheControl: '3600',
-                    upsert: false,
-                    onUploadProgress: onProgress
-                });
+                .upload(fileName, file, uploadOptions);
             
             if (error) {
                 throw new Error('文件上传失败: ' + error.message);
             }
             
             // 获取公共URL
-            const { data: { publicUrl } } = window.App.supabase.storage
+            const { data: { publicUrl }, error: urlError } = window.App.supabase.storage
                 .from(bucket)
                 .getPublicUrl(fileName);
+            
+            if (urlError) {
+                throw new Error('获取文件URL失败: ' + urlError.message);
+            }
             
             console.log('文件上传成功:', publicUrl);
             return publicUrl;
@@ -304,23 +417,28 @@
     }
 
     // 添加新音乐
-    async function addMusic(title, description, coverFile, audioFile) {
+    async function addMusic(title, description, coverFile, audioFile, onProgress) {
         try {
             // 验证管理员权限
             await window.App.auth.verifyAdminAccess();
             
             console.log('正在添加新音乐:', title);
             
+            // 检查是否提供了必需的文件
+            if (!audioFile) {
+                throw new Error('必须提供音频文件');
+            }
+            
             // 上传封面图片
             let coverUrl = null;
             if (coverFile) {
-                coverUrl = await uploadFile(coverFile, 'music');
+                coverUrl = await uploadFile(coverFile, 'images', onProgress);
             }
             
             // 上传音频文件
             let audioUrl = null;
             if (audioFile) {
-                audioUrl = await uploadFile(audioFile, 'music');
+                audioUrl = await uploadFile(audioFile, 'music', onProgress);
             }
             
             const { data: { user } } = await window.App.supabase.auth.getUser();
@@ -353,23 +471,28 @@
     }
 
     // 添加新视频
-    async function addVideo(title, description, thumbnailFile, videoFile) {
+    async function addVideo(title, description, thumbnailFile, videoFile, onProgress) {
         try {
             // 验证管理员权限
             await window.App.auth.verifyAdminAccess();
             
             console.log('正在添加新视频:', title);
             
+            // 检查是否提供了必需的文件
+            if (!videoFile) {
+                throw new Error('必须提供视频文件');
+            }
+            
             // 上传缩略图
             let thumbnailUrl = null;
             if (thumbnailFile) {
-                thumbnailUrl = await uploadFile(thumbnailFile, 'videos');
+                thumbnailUrl = await uploadFile(thumbnailFile, 'images', onProgress);
             }
             
             // 上传视频文件
             let videoUrl = null;
             if (videoFile) {
-                videoUrl = await uploadFile(videoFile, 'videos');
+                videoUrl = await uploadFile(videoFile, 'videos', onProgress);
             }
             
             const { data: { user } } = await window.App.supabase.auth.getUser();
@@ -401,120 +524,22 @@
         }
     }
 
-    // 显示通知消息
-    function showNotification(elementId, message, isSuccess = true) {
-        const notification = document.getElementById(elementId);
-        if (!notification) {
-            console.error('找不到通知元素:', elementId);
-            return;
-        }
-        
-        notification.textContent = message;
-        notification.className = 'notification ' + (isSuccess ? 'success' : 'error');
-        notification.style.display = 'block';
-        
-        // 3秒后自动隐藏
-        setTimeout(() => {
-            notification.style.display = 'none';
-        }, 3000);
-    }
-
-    // 更新上传进度
-    function updateUploadProgress(containerId, progressBarId, progressTextId, progress) {
-        const container = document.getElementById(containerId);
-        const progressBar = document.getElementById(progressBarId);
-        const progressText = document.getElementById(progressTextId);
-        
-        if (!container || !progressBar || !progressText) {
-            console.error('找不到进度条元素');
-            return;
-        }
-        
-        container.style.display = 'block';
-        progressBar.style.width = progress + '%';
-        progressText.textContent = progress + '%';
-    }
-
-    // 加载音乐管理数据
-    async function loadMusicManagementData() {
-        try {
-            window.App.admin.showLoading('music-management-table');
-            
-            // 检查表是否存在
-            const tableCheck = await checkTableExists('music');
-            if (!tableCheck.exists) {
-                window.App.admin.showError('music-management-table', 
-                    '音乐表不存在，请联系管理员创建数据表');
-                return;
-            }
-            
-            const musicData = await window.App.admin.fetchMusicForManagement();
-            renderMusicManagementTable(musicData);
-        } catch (error) {
-            showError('music-management-table', '获取音乐数据失败: ' + error.message);
-        }
-    }
-
-    // 加载视频管理数据
-    async function loadVideoManagementData() {
-        try {
-            window.App.admin.showLoading('video-management-table');
-            
-            // 检查表是否存在
-            const tableCheck = await checkTableExists('videos');
-            if (!tableCheck.exists) {
-                window.App.admin.showError('video-management-table', 
-                    '视频表不存在，请联系管理员创建数据表');
-                return;
-            }
-            
-            const videoData = await window.App.admin.fetchVideosForManagement();
-            renderVideoManagementTable(videoData);
-        } catch (error) {
-            showError('video-management-table', '获取视频数据失败: ' + error.message);
-        }
-    }
-
-    // 显示加载状态
-    function showLoading(containerId) {
-        const container = document.getElementById(containerId);
-        if (!container) {
-            console.error('找不到容器元素:', containerId);
-            return;
-        }
-        
-        container.innerHTML = '<div class="loading-indicator">加载中...</div>';
-    }
-
-    // 显示错误信息
-    function showError(containerId, message) {
-        const container = document.getElementById(containerId);
-        if (!container) {
-            console.error('找不到容器元素:', containerId);
-            return;
-        }
-        
-        container.innerHTML = `<div class="error-message">${message}</div>`;
-    }
-
-    // 将管理员相关函数添加到全局命名空间
+    // 将函数添加到全局命名空间
     window.App = window.App || {};
     window.App.admin = {
+        checkTableExists,
+        checkBucketExists,
         renderMusicManagementTable,
         renderVideoManagementTable,
+        showLoading,
+        showError,
+        showNotification,
+        loadMusicManagementData,
+        loadVideoManagementData,
         deleteMusic,
         deleteVideo,
         uploadFile,
         addMusic,
-        addVideo,
-        showNotification,
-        updateUploadProgress,
-        loadMusicManagementData,
-        loadVideoManagementData,
-        showLoading,
-        showError,
-        checkTableExists,
-        fetchMusicForManagement: window.App.music.fetchMusicForManagement,
-        fetchVideosForManagement: window.App.videos.fetchVideosForManagement
+        addVideo
     };
 })();

@@ -1,4 +1,4 @@
-                     // 使用IIFE包装避免全局变量污染
+// 使用IIFE包装避免全局变量污染
 (function() {
     // 页面加载时获取音乐和视频数据
     async function loadMediaData() {
@@ -474,8 +474,28 @@
                     const coverFile = document.getElementById('music-cover').files[0];
                     const audioFile = document.getElementById('music-audio').files[0];
                     
+                    // 显示进度条
+                    const progressContainer = document.getElementById('music-upload-progress-container');
+                    const progressBar = document.getElementById('music-upload-progress');
+                    const progressText = document.getElementById('music-upload-progress-text');
+                    
+                    if (progressContainer) {
+                        progressContainer.style.display = 'block';
+                    }
+                    
                     const submitButton = document.getElementById('submit-music');
                     const originalText = submitButton.textContent;
+                    
+                    // 创建进度回调函数
+                    const onProgress = (progress) => {
+                        const percent = Math.round((progress.loaded / progress.total) * 100);
+                        if (progressBar) {
+                            progressBar.style.width = `${percent}%`;
+                        }
+                        if (progressText) {
+                            progressText.textContent = `${percent}%`;
+                        }
+                    };
                     
                     try {
                         // 禁用提交按钮
@@ -483,7 +503,7 @@
                         submitButton.textContent = '上传中...';
                         
                         // 添加音乐
-                        const music = await window.App.admin.addMusic(title, description, coverFile, audioFile);
+                        const music = await window.App.admin.addMusic(title, description, coverFile, audioFile, onProgress);
                         
                         // 显示成功消息
                         window.App.admin.showNotification('music-upload-notification', '音乐添加成功', true);
@@ -492,7 +512,6 @@
                         document.getElementById('add-music-form').reset();
                         
                         // 隐藏进度条
-                        const progressContainer = document.getElementById('music-upload-progress-container');
                         if (progressContainer) {
                             progressContainer.style.display = 'none';
                         }
@@ -502,6 +521,11 @@
                     } catch (error) {
                         console.error('添加音乐失败:', error.message);
                         window.App.admin.showNotification('music-upload-notification', '添加失败: ' + error.message, false);
+                        
+                        // 隐藏进度条
+                        if (progressContainer) {
+                            progressContainer.style.display = 'none';
+                        }
                     } finally {
                         // 恢复提交按钮
                         submitButton.disabled = false;
@@ -529,8 +553,28 @@
                     const thumbnailFile = document.getElementById('video-thumbnail').files[0];
                     const videoFile = document.getElementById('video-file').files[0];
                     
+                    // 显示进度条
+                    const progressContainer = document.getElementById('video-upload-progress-container');
+                    const progressBar = document.getElementById('video-upload-progress');
+                    const progressText = document.getElementById('video-upload-progress-text');
+                    
+                    if (progressContainer) {
+                        progressContainer.style.display = 'block';
+                    }
+                    
                     const submitButton = document.getElementById('submit-video');
                     const originalText = submitButton.textContent;
+                    
+                    // 创建进度回调函数
+                    const onProgress = (progress) => {
+                        const percent = Math.round((progress.loaded / progress.total) * 100);
+                        if (progressBar) {
+                            progressBar.style.width = `${percent}%`;
+                        }
+                        if (progressText) {
+                            progressText.textContent = `${percent}%`;
+                        }
+                    };
                     
                     try {
                         // 禁用提交按钮
@@ -538,7 +582,7 @@
                         submitButton.textContent = '上传中...';
                         
                         // 添加视频
-                        const video = await window.App.admin.addVideo(title, description, thumbnailFile, videoFile);
+                        const video = await window.App.admin.addVideo(title, description, thumbnailFile, videoFile, onProgress);
                         
                         // 显示成功消息
                         window.App.admin.showNotification('video-upload-notification', '视频添加成功', true);
@@ -547,7 +591,6 @@
                         document.getElementById('add-video-form').reset();
                         
                         // 隐藏进度条
-                        const progressContainer = document.getElementById('video-upload-progress-container');
                         if (progressContainer) {
                             progressContainer.style.display = 'none';
                         }
@@ -557,6 +600,11 @@
                     } catch (error) {
                         console.error('添加视频失败:', error.message);
                         window.App.admin.showNotification('video-upload-notification', '添加失败: ' + error.message, false);
+                        
+                        // 隐藏进度条
+                        if (progressContainer) {
+                            progressContainer.style.display = 'none';
+                        }
                     } finally {
                         // 恢复提交按钮
                         submitButton.disabled = false;
