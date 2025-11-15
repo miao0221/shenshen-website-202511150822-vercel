@@ -81,9 +81,8 @@
 
     // 根据认证状态更新UI
     async function updateUIBasedOnAuthState(user) {
-        const adminArea = document.getElementById('admin-area');
         const authLink = document.getElementById('auth-link');
-        const adminDashboardLink = document.getElementById('admin-dashboard-link'); // 管理后台按钮
+        const adminNavItem = document.getElementById('admin-nav-item'); // 管理员导航项
         
         if (user) {
             // 用户已登录
@@ -93,23 +92,20 @@
             const isAdmin = await window.App.auth.checkIfAdmin(user.id);
             
             if (isAdmin) {
-                // 显示管理员区域和管理后台按钮
-                adminArea.style.display = 'block';
-                adminDashboardLink.style.display = 'block'; // 显示管理后台按钮
-                console.log('管理员权限已确认，显示管理功能');
+                // 显示管理员导航项
+                adminNavItem.style.display = 'block';
+                console.log('管理员权限已确认，显示管理员导航项');
             } else {
-                // 隐藏管理员区域和管理后台按钮
-                adminArea.style.display = 'none';
-                adminDashboardLink.style.display = 'none'; // 隐藏管理后台按钮
-                console.log('当前用户不是管理员，隐藏管理功能');
+                // 隐藏管理员导航项
+                adminNavItem.style.display = 'none';
+                console.log('当前用户不是管理员，隐藏管理员导航项');
             }
             
             authLink.textContent = '退出登录';
         } else {
             // 用户未登录
-            console.log('用户未登录，隐藏管理功能');
-            adminArea.style.display = 'none';
-            adminDashboardLink.style.display = 'none'; // 隐藏管理后台按钮
+            console.log('用户未登录，隐藏管理员导航项');
+            adminNavItem.style.display = 'none';
             authLink.textContent = '登录/注册';
         }
     }
@@ -168,6 +164,12 @@
             section.classList.remove('active');
         });
         
+        // 隐藏管理员区域（默认）
+        const adminArea = document.getElementById('admin-area');
+        if (adminArea) {
+            adminArea.style.display = 'none';
+        }
+        
         // 显示目标内容区域
         const targetSection = document.getElementById(`${target}-content`);
         if (targetSection) {
@@ -185,9 +187,24 @@
             activeLink.classList.add('active');
         }
         
-        // 如果是管理区域，特殊处理
+        // 特殊处理：如果目标是管理后台，则显示管理员区域
         if (target === 'admin') {
-            document.getElementById('admin-area').style.display = 'block';
+            // 先验证管理员权限
+            window.App.auth.verifyAdminAccess()
+                .then(() => {
+                    // 权限验证通过，显示管理员区域
+                    if (adminArea) {
+                        adminArea.style.display = 'block';
+                        // 默认加载音乐管理数据
+                        window.App.admin.loadMusicManagementData();
+                    }
+                })
+                .catch((error) => {
+                    // 权限验证失败，显示错误信息
+                    alert('无权限访问管理后台: ' + error.message);
+                    // 切换回首页
+                    switchContent('home');
+                });
         }
     }
 

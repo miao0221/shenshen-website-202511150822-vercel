@@ -27,7 +27,7 @@
                 <li><a href="#" class="nav-link" data-target="timeline">时间轴</a></li>
                 <li><a href="#" class="nav-link" data-target="honor">荣誉墙</a></li>
                 <li><a href="#" class="nav-link" data-target="merchandise">商业及周边</a></li>
-                <li><a href="#" id="admin-dashboard-link">管理后台</a></li>
+                <li id="admin-nav-item" style="display: none;"><a href="#" class="nav-link" data-target="admin">管理员界面</a></li>
                 <li><a href="#" id="auth-link">登录/注册</a></li>
             </ul>
         </div>
@@ -106,124 +106,129 @@
         </section>
 
         <!-- 管理员后台区域 -->
-        <section id="admin-area">
-            <h2>管理员后台</h2>
-            <p>管理网站内容，包括音乐和视频作品。</p>
-            
-            <!-- 管理员标签页 -->
-            <div class="admin-tabs">
-                <div class="admin-tab active" data-tab="music-management">音乐管理</div>
-                <div class="admin-tab" data-tab="video-management">视频管理</div>
-                <div class="admin-tab" data-tab="add-music">添加音乐</div>
-                <div class="admin-tab" data-tab="add-video">添加视频</div>
-            </div>
-            
-            <!-- 音乐管理 -->
-            <div class="admin-tab-content active" id="music-management-content">
-                <div class="admin-section">
-                    <h3 class="admin-section-title">音乐列表</h3>
-                    <div id="music-management-table">
-                        <div class="loading-indicator">加载中...</div>
+        <section id="admin-content" class="content-section">
+            <div id="admin-area">
+                <h2>管理员后台</h2>
+                <p>管理网站内容，包括音乐和视频作品。</p>
+                
+                <!-- 管理员标签页 -->
+                <div class="admin-tabs">
+                    <div class="admin-tab active" data-tab="music-management">音乐管理</div>
+                    <div class="admin-tab" data-tab="video-management">视频管理</div>
+                    <div class="admin-tab" data-tab="add-music">添加音乐</div>
+                    <div class="admin-tab" data-tab="add-video">添加视频</div>
+                </div>
+                
+                <!-- 音乐管理 -->
+                <div class="admin-tab-content active" id="music-management-content">
+                    <div class="admin-section">
+                        <h3 class="admin-section-title">音乐列表</h3>
+                        <div id="music-management-table">
+                            <div class="loading-indicator">加载中...</div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- 视频管理 -->
-            <div class="admin-tab-content" id="video-management-content">
-                <div class="admin-section">
-                    <h3 class="admin-section-title">视频列表</h3>
-                    <div id="video-management-table">
-                        <div class="loading-indicator">加载中...</div>
+                
+                <!-- 视频管理 -->
+                <div class="admin-tab-content" id="video-management-content">
+                    <div class="admin-section">
+                        <h3 class="admin-section-title">视频列表</h3>
+                        <div id="video-management-table">
+                            <div class="loading-indicator">加载中...</div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- 添加音乐 -->
-            <div class="admin-tab-content" id="add-music-content">
-                <div class="admin-section">
-                    <h3 class="admin-section-title">添加新音乐</h3>
-                    <form id="add-music-form" class="admin-form">
-                        <div class="form-group">
-                            <label for="music-title">歌曲标题</label>
-                            <input type="text" id="music-title" name="title" required>
-                        </div>
-                        
-                        <div class="form-group-full">
-                            <label for="music-description">歌曲描述</label>
-                            <textarea id="music-description" name="description"></textarea>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="music-cover">封面图片</label>
-                            <div class="upload-area" id="music-cover-upload">
-                                <p>点击或拖拽上传封面图片</p>
-                                <input type="file" id="music-cover" name="cover" class="file-input" accept="image/*">
+                
+                <!-- 添加音乐 -->
+                <div class="admin-tab-content" id="add-music-content">
+                    <div class="admin-section">
+                        <h3 class="admin-section-title">添加新音乐</h3>
+                        <form id="add-music-form" class="admin-form">
+                            <div class="form-group">
+                                <label for="music-title">歌曲标题</label>
+                                <input type="text" id="music-title" name="title" required>
                             </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="music-audio">音频文件</label>
-                            <div class="upload-area" id="music-audio-upload">
-                                <p>点击或拖拽上传音频文件</p>
-                                <input type="file" id="music-audio" name="audio" class="file-input" accept="audio/*">
+                            
+                            <div class="form-group-full">
+                                <label for="music-description">歌曲描述</label>
+                                <textarea id="music-description" name="description"></textarea>
                             </div>
-                        </div>
-                        
-                        <div class="progress-bar-container" id="music-upload-progress-container" style="display: none;">
-                            <div class="progress-bar" id="music-upload-progress"></div>
-                            <div class="progress-text" id="music-upload-progress-text">0%</div>
-                        </div>
-                        
-                        <div class="notification" id="music-upload-notification"></div>
-                        
-                        <button type="submit" class="admin-button" id="submit-music">添加音乐</button>
-                    </form>
+                            
+                            <div class="form-group">
+                                <label for="music-cover">封面图片</label>
+                                <div class="upload-area" id="music-cover-upload">
+                                    <p>点击或拖拽上传封面图片</p>
+                                    <input type="file" id="music-cover" name="cover" class="file-input" accept="image/*">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="music-audio">音频文件</label>
+                                <div class="upload-area" id="music-audio-upload">
+                                    <p>点击或拖拽上传音频文件</p>
+                                    <input type="file" id="music-audio" name="audio" class="file-input" accept="audio/*">
+                                </div>
+                            </div>
+                            
+                            <div class="progress-bar-container" id="music-upload-progress-container" style="display: none;">
+                                <div class="progress-bar" id="music-upload-progress"></div>
+                                <div class="progress-text" id="music-upload-progress-text">0%</div>
+                            </div>
+                            
+                            <div class="notification" id="music-upload-notification"></div>
+                            
+                            <button type="submit" class="admin-button" id="submit-music">添加音乐</button>
+                        </form>
+                    </div>
                 </div>
-            </div>
-            
-            <!-- 添加视频 -->
-            <div class="admin-tab-content" id="add-video-content">
-                <div class="admin-section">
-                    <h3 class="admin-section-title">添加新视频</h3>
-                    <form id="add-video-form" class="admin-form">
-                        <div class="form-group">
-                            <label for="video-title">视频标题</label>
-                            <input type="text" id="video-title" name="title" required>
-                        </div>
-                        
-                        <div class="form-group-full">
-                            <label for="video-description">视频描述</label>
-                            <textarea id="video-description" name="description"></textarea>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="video-thumbnail">视频缩略图</label>
-                            <div class="upload-area" id="video-thumbnail-upload">
-                                <p>点击或拖拽上传视频缩略图</p>
-                                <input type="file" id="video-thumbnail" name="thumbnail" class="file-input" accept="image/*">
+                
+                <!-- 添加视频 -->
+                <div class="admin-tab-content" id="add-video-content">
+                    <div class="admin-section">
+                        <h3 class="admin-section-title">添加新视频</h3>
+                        <form id="add-video-form" class="admin-form">
+                            <div class="form-group">
+                                <label for="video-title">视频标题</label>
+                                <input type="text" id="video-title" name="title" required>
                             </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="video-file">视频文件</label>
-                            <div class="upload-area" id="video-file-upload">
-                                <p>点击或拖拽上传视频文件</p>
-                                <input type="file" id="video-file" name="video" class="file-input" accept="video/*">
+                            
+                            <div class="form-group-full">
+                                <label for="video-description">视频描述</label>
+                                <textarea id="video-description" name="description"></textarea>
                             </div>
-                        </div>
-                        
-                        <div class="progress-bar-container" id="video-upload-progress-container" style="display: none;">
-                            <div class="progress-bar" id="video-upload-progress"></div>
-                            <div class="progress-text" id="video-upload-progress-text">0%</div>
-                        </div>
-                        
-                        <div class="notification" id="video-upload-notification"></div>
-                        
-                        <button type="submit" class="admin-button" id="submit-video">添加视频</button>
-                    </form>
+                            
+                            <div class="form-group">
+                                <label for="video-thumbnail">视频缩略图</label>
+                                <div class="upload-area" id="video-thumbnail-upload">
+                                    <p>点击或拖拽上传视频缩略图</p>
+                                    <input type="file" id="video-thumbnail" name="thumbnail" class="file-input" accept="image/*">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="video-file">视频文件</label>
+                                <div class="upload-area" id="video-file-upload">
+                                    <p>点击或拖拽上传视频文件</p>
+                                    <input type="file" id="video-file" name="video" class="file-input" accept="video/*">
+                                </div>
+                            </div>
+                            
+                            <div class="progress-bar-container" id="video-upload-progress-container" style="display: none;">
+                                <div class="progress-bar" id="video-upload-progress"></div>
+                                <div class="progress-text" id="video-upload-progress-text">0%</div>
+                            </div>
+                            
+                            <div class="notification" id="video-upload-notification"></div>
+                            
+                            <button type="submit" class="admin-button" id="submit-video">添加视频</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </section>
+
+        <!-- 管理员后台按钮（用于显示在导航栏） -->
+        <div id="admin-dashboard-link" style="display: none;"></div>
     </div>
 
     <!-- 音乐播放模态框 -->
@@ -267,7 +272,7 @@
 
     <!-- 登录/注册模态框 -->
     <div id="auth-modal" class="auth-modal">
-        <div class="auth-modal-content">
+        <div class="media-modal-content">
             <div class="auth-modal-header">
                 <h2>用户认证</h2>
                 <span class="close">&times;</span>
