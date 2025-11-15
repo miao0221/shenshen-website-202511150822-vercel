@@ -14,10 +14,19 @@
     <nav>
         <div class="nav-container">
             <div class="logo">周深网站</div>
+            <div class="menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
             <ul class="nav-links">
                 <li><a href="#" class="nav-link active" data-target="home">首页</a></li>
                 <li><a href="#" class="nav-link" data-target="music">音乐</a></li>
                 <li><a href="#" class="nav-link" data-target="video">视频</a></li>
+                <li><a href="#" class="nav-link" data-target="interview">采访</a></li>
+                <li><a href="#" class="nav-link" data-target="timeline">时间轴</a></li>
+                <li><a href="#" class="nav-link" data-target="honor">荣誉墙</a></li>
+                <li><a href="#" class="nav-link" data-target="merchandise">商业及周边</a></li>
                 <li><a href="#" id="admin-dashboard-link">管理后台</a></li>
                 <li><a href="#" id="auth-link">登录/注册</a></li>
             </ul>
@@ -26,8 +35,8 @@
 
     <!-- 主要内容区域 -->
     <div class="container">
-        <!-- 用户浏览区域 -->
-        <section id="user-area">
+        <!-- 首页内容区域 -->
+        <section id="home-content" class="content-section active">
             <h1>欢迎来到周深官方网站</h1>
             <p>这里是周深粉丝的聚集地，您可以在这里了解周深的最新动态、音乐作品和精彩视频。</p>
             
@@ -45,6 +54,54 @@
                 <div id="videos-container">
                     <div class="loading-indicator">加载中...</div>
                 </div>
+            </div>
+        </section>
+
+        <!-- 音乐内容区域 -->
+        <section id="music-content" class="content-section">
+            <h1>周深的音乐作品</h1>
+            <div id="music-full-container">
+                <div class="loading-indicator">加载中...</div>
+            </div>
+        </section>
+
+        <!-- 视频内容区域 -->
+        <section id="video-content" class="content-section">
+            <h1>周深的视频作品</h1>
+            <div id="videos-full-container">
+                <div class="loading-indicator">加载中...</div>
+            </div>
+        </section>
+
+        <!-- 采访内容区域 -->
+        <section id="interview-content" class="content-section">
+            <h1>周深采访合集</h1>
+            <div class="content-placeholder">
+                <p>采访内容正在整理中，敬请期待...</p>
+            </div>
+        </section>
+
+        <!-- 时间轴内容区域 -->
+        <section id="timeline-content" class="content-section">
+            <h1>周深音乐之路时间轴</h1>
+            <div class="content-placeholder">
+                <p>时间轴内容正在整理中，敬请期待...</p>
+            </div>
+        </section>
+
+        <!-- 荣誉墙内容区域 -->
+        <section id="honor-content" class="content-section">
+            <h1>周深荣誉墙</h1>
+            <div class="content-placeholder">
+                <p>荣誉墙内容正在整理中，敬请期待...</p>
+            </div>
+        </section>
+
+        <!-- 商业及周边内容区域 -->
+        <section id="merchandise-content" class="content-section">
+            <h1>商业合作及周边产品</h1>
+            <div class="content-placeholder">
+                <p>商业合作及周边产品信息正在整理中，敬请期待...</p>
             </div>
         </section>
 

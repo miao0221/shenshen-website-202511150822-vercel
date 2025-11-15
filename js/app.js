@@ -39,6 +39,44 @@
                 window.App.admin.showError('videos-container', '获取视频数据失败: ' + error.message);
             }
         }
+        
+        // 获取并显示音乐数据（完整页面）
+        try {
+            window.App.admin.showLoading('music-full-container');
+            const musicData = await window.App.music.fetchMusic();
+            window.App.music.renderMusicCards(musicData);
+        } catch (error) {
+            // 检查是否是表不存在的错误
+            if (error.message.includes('表不存在')) {
+                document.getElementById('music-full-container').innerHTML = `
+                    <div class="empty-state">
+                        <p>音乐作品暂未添加</p>
+                        <p class="empty-state-subtitle">请管理员添加音乐作品</p>
+                    </div>
+                `;
+            } else {
+                window.App.admin.showError('music-full-container', '获取音乐数据失败: ' + error.message);
+            }
+        }
+
+        // 获取并显示视频数据（完整页面）
+        try {
+            window.App.admin.showLoading('videos-full-container');
+            const videoData = await window.App.videos.fetchVideos();
+            window.App.videos.renderVideoCards(videoData);
+        } catch (error) {
+            // 检查是否是表不存在的错误
+            if (error.message.includes('表不存在')) {
+                document.getElementById('videos-full-container').innerHTML = `
+                    <div class="empty-state">
+                        <p>视频作品暂未添加</p>
+                        <p class="empty-state-subtitle">请管理员添加视频作品</p>
+                    </div>
+                `;
+            } else {
+                window.App.admin.showError('videos-full-container', '获取视频数据失败: ' + error.message);
+            }
+        }
     }
 
     // 根据认证状态更新UI
@@ -120,6 +158,36 @@
         const modal = document.getElementById('auth-modal');
         if (modal) {
             modal.style.display = 'none';
+        }
+    }
+
+    // 切换导航内容
+    function switchContent(target) {
+        // 隐藏所有内容区域
+        document.querySelectorAll('.content-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        
+        // 显示目标内容区域
+        const targetSection = document.getElementById(`${target}-content`);
+        if (targetSection) {
+            targetSection.classList.add('active');
+        }
+        
+        // 更新导航链接的激活状态
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        
+        // 激活当前导航链接
+        const activeLink = document.querySelector(`.nav-link[data-target="${target}"]`);
+        if (activeLink) {
+            activeLink.classList.add('active');
+        }
+        
+        // 如果是管理区域，特殊处理
+        if (target === 'admin') {
+            document.getElementById('admin-area').style.display = 'block';
         }
     }
 
@@ -582,8 +650,38 @@
             });
         }
         
+        // 导航链接点击事件
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = this.getAttribute('data-target');
+                switchContent(target);
+            });
+        });
+        
+        // 汉堡菜单点击事件
+        const menuToggle = document.querySelector('.menu-toggle');
+        const navLinks = document.querySelector('.nav-links');
+        if (menuToggle && navLinks) {
+            menuToggle.addEventListener('click', function() {
+                navLinks.classList.toggle('active');
+            });
+        }
+        
+        // 点击导航链接后关闭移动端菜单
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function() {
+                if (navLinks) {
+                    navLinks.classList.remove('active');
+                }
+            });
+        });
+        
         // 页面加载完成后立即获取数据
         loadMediaData();
+        
+        // 默认显示首页内容
+        switchContent('home');
     }
 
     // 确保DOM加载完成后初始化应用
