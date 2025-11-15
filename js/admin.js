@@ -26,9 +26,17 @@
         }
     }
 
+    // 存储桶存在性缓存
+    const bucketCache = new Map();
+    
     // 检查存储桶是否存在
     async function checkBucketExists(bucketName) {
         try {
+            // 检查缓存
+            if (bucketCache.has(bucketName)) {
+                return bucketCache.get(bucketName);
+            }
+            
             console.log(`正在检查存储桶是否存在: ${bucketName}`);
             
             // 获取存储桶列表
@@ -36,20 +44,34 @@
             
             if (listError) {
                 console.error('获取存储桶列表失败:', listError.message);
-                throw new Error('获取存储桶列表失败: ' + listError.message);
+                const errorMsg = `无法连接到存储服务: ${listError.message}`;
+                throw new Error(errorMsg);
+            }
+            
+            if (!buckets || !Array.isArray(buckets)) {
+                const errorMsg = '获取的存储桶列表格式无效';
+                console.error(errorMsg, buckets);
+                throw new Error(errorMsg);
             }
             
             // 检查存储桶是否存在
             const bucketExists = buckets.some(bucket => bucket.name === bucketName);
             
+            // 缓存结果
+            bucketCache.set(bucketName, bucketExists);
+            
             if (!bucketExists) {
-                throw new Error(`存储桶 "${bucketName}" 不存在，请在 Supabase 后台创建该存储桶`);
+                const errorMsg = `存储桶 "${bucketName}" 不存在，请在 Supabase 后台创建该存储桶。可用的存储桶: ${buckets.map(b => b.name).join(', ')}`;
+                console.warn(errorMsg);
+                throw new Error(errorMsg);
             }
             
             console.log(`存储桶 ${bucketName} 存在`);
             return true;
         } catch (error) {
             console.error('检查存储桶时发生错误:', error.message);
+            // 清除可能的脏缓存
+            bucketCache.delete(bucketName);
             throw error;
         }
     }
@@ -200,6 +222,101 @@
             notification.className = 'notification';
             notification.textContent = '';
         }, 3000);
+    }
+
+    // 显示Toast通知
+    function showToast(message, isSuccess = true) {
+        // 创建Toast容器（如果不存在）
+        let toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+            `;
+            document.body.appendChild(toastContainer);
+        }
+        
+        // 创建Toast元素
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            background-color: ${isSuccess ? '#4CAF50' : '#f44336'};
+            color: white;
+            padding: 16px 24px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.3s, transform 0.3s;
+            max-width: 400px;
+        `;
+        
+        toast.textContent = message;
+        toastContainer.appendChild(toast);
+        
+        // 显示动画
+        setTimeout(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        }, 10);
+        
+        // 3秒后移除
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-20px)';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 3000);
+    }
+
+    // 格式化文件大小
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // 显示文件预览
+    function showFilePreview(file, previewElementId) {
+        const previewElement = document.getElementById(previewElementId);
+        if (!previewElement || !file) return;
+        
+        // 清空之前的预览内容
+        previewElement.innerHTML = '';
+        previewElement.style.display = 'block';
+        
+        // 根据文件类型显示不同预览
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewElement.innerHTML = `
+                    <img src="${e.target.result}" alt="预览图片">
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-size">${formatFileSize(file.size)}</div>
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        } else {
+            // 对于非图片文件，显示文件信息
+            previewElement.innerHTML = `
+                <div class="file-info">
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-size">${formatFileSize(file.size)}</div>
+                    <div class="file-type">${file.type || '未知类型'}</div>
+                </div>
+            `;
+        }
     }
 
     // 加载音乐管理数据
@@ -534,6 +651,8 @@
         showLoading,
         showError,
         showNotification,
+        showToast,
+        showFilePreview,
         loadMusicManagementData,
         loadVideoManagementData,
         deleteMusic,

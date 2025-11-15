@@ -146,7 +146,132 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 ```
 
-## 5. 示例数据
+## 5. 存储桶设置
+
+项目使用 Supabase Storage 存储媒体文件，需要创建以下存储桶：
+
+1. `music` 存储桶 - 用于存储音频文件
+2. `videos` 存储桶 - 用于存储视频文件
+3. `images` 存储桶 - 用于存储封面图片和缩略图
+
+### 创建存储桶
+
+在 Supabase Dashboard 中：
+1. 进入 Storage 页面
+2. 点击 "Create bucket" 按钮
+3. 分别创建名为 `music`、`videos` 和 `images` 的存储桶
+
+### 存储桶RLS策略设置
+
+为了确保安全性和正确的访问控制，需要为每个存储桶设置RLS策略：
+
+```sql
+-- 注意：这些命令需要在Supabase SQL编辑器中执行
+
+-- 为存储对象表启用RLS（如果尚未启用）
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+
+-- 为music存储桶设置策略
+-- 允许认证用户上传文件
+CREATE POLICY "允许认证用户上传音频文件" ON storage.objects 
+FOR INSERT TO authenticated 
+WITH CHECK (bucket_id = 'music');
+
+-- 允许所有人读取音频文件
+CREATE POLICY "允许所有人读取音频文件" ON storage.objects 
+FOR SELECT TO public 
+USING (bucket_id = 'music');
+
+-- 仅允许管理员更新音频文件
+CREATE POLICY "仅允许管理员更新音频文件" ON storage.objects 
+FOR UPDATE TO authenticated 
+USING (
+  bucket_id = 'music' AND 
+  EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = auth.uid() AND is_admin = true
+  )
+);
+
+-- 仅允许管理员删除音频文件
+CREATE POLICY "仅允许管理员删除音频文件" ON storage.objects 
+FOR DELETE TO authenticated 
+USING (
+  bucket_id = 'music' AND 
+  EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = auth.uid() AND is_admin = true
+  )
+);
+
+-- 为videos存储桶设置策略
+-- 允许认证用户上传文件
+CREATE POLICY "允许认证用户上传视频文件" ON storage.objects 
+FOR INSERT TO authenticated 
+WITH CHECK (bucket_id = 'videos');
+
+-- 允许所有人读取视频文件
+CREATE POLICY "允许所有人读取视频文件" ON storage.objects 
+FOR SELECT TO public 
+USING (bucket_id = 'videos');
+
+-- 仅允许管理员更新视频文件
+CREATE POLICY "仅允许管理员更新视频文件" ON storage.objects 
+FOR UPDATE TO authenticated 
+USING (
+  bucket_id = 'videos' AND 
+  EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = auth.uid() AND is_admin = true
+  )
+);
+
+-- 仅允许管理员删除视频文件
+CREATE POLICY "仅允许管理员删除视频文件" ON storage.objects 
+FOR DELETE TO authenticated 
+USING (
+  bucket_id = 'videos' AND 
+  EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = auth.uid() AND is_admin = true
+  )
+);
+
+-- 为images存储桶设置策略
+-- 允许认证用户上传文件
+CREATE POLICY "允许认证用户上传图片文件" ON storage.objects 
+FOR INSERT TO authenticated 
+WITH CHECK (bucket_id = 'images');
+
+-- 允许所有人读取图片文件
+CREATE POLICY "允许所有人读取图片文件" ON storage.objects 
+FOR SELECT TO public 
+USING (bucket_id = 'images');
+
+-- 仅允许管理员更新图片文件
+CREATE POLICY "仅允许管理员更新图片文件" ON storage.objects 
+FOR UPDATE TO authenticated 
+USING (
+  bucket_id = 'images' AND 
+  EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = auth.uid() AND is_admin = true
+  )
+);
+
+-- 仅允许管理员删除图片文件
+CREATE POLICY "仅允许管理员删除图片文件" ON storage.objects 
+FOR DELETE TO authenticated 
+USING (
+  bucket_id = 'images' AND 
+  EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = auth.uid() AND is_admin = true
+  )
+);
+```
+
+## 6. 示例数据
 
 以下是一些示例数据，您可以根据需要修改：
 
@@ -166,7 +291,7 @@ INSERT INTO videos (title, description, video_url, thumbnail_url, created_by) VA
 ('周深访谈节目', '周深参加某访谈节目的精彩片段', 'https://example.com/interview.mp4', 'https://example.com/interview_thumb.jpg', '00000000-0000-0000-0000-000000000000');
 ```
 
-## 6. 设置管理员用户
+## 7. 设置管理员用户
 
 将特定用户设置为管理员：
 

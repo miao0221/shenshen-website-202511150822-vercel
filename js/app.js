@@ -399,6 +399,7 @@
                             if (type === 'music') {
                                 await window.App.admin.deleteMusic(id);
                                 window.App.admin.showNotification('music-upload-notification', '音乐删除成功', true);
+                                window.App.admin.showToast('音乐删除成功', true);
                                 // 重新加载音乐管理数据
                                 await window.App.admin.loadMusicManagementData();
                                 // 重新加载用户界面音乐数据
@@ -406,6 +407,7 @@
                             } else if (type === 'video') {
                                 await window.App.admin.deleteVideo(id);
                                 window.App.admin.showNotification('video-upload-notification', '视频删除成功', true);
+                                window.App.admin.showToast('视频删除成功', true);
                                 // 重新加载视频管理数据
                                 await window.App.admin.loadVideoManagementData();
                                 // 重新加载用户界面视频数据
@@ -418,6 +420,7 @@
                             } else if (type === 'video') {
                                 window.App.admin.showNotification('video-upload-notification', '删除失败: ' + error.message, false);
                             }
+                            window.App.admin.showToast('删除失败: ' + error.message, false);
                         }
                     }
                 } catch (error) {
@@ -458,6 +461,43 @@
                 }
             });
         });
+        
+        // 文件预览处理
+        // 音乐封面预览
+        const musicCoverInput = document.getElementById('music-cover');
+        if (musicCoverInput) {
+            musicCoverInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                window.App.admin.showFilePreview(file, 'music-cover-preview');
+            });
+        }
+        
+        // 音频文件预览
+        const musicAudioInput = document.getElementById('music-audio');
+        if (musicAudioInput) {
+            musicAudioInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                window.App.admin.showFilePreview(file, 'music-audio-preview');
+            });
+        }
+        
+        // 视频缩略图预览
+        const videoThumbnailInput = document.getElementById('video-thumbnail');
+        if (videoThumbnailInput) {
+            videoThumbnailInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                window.App.admin.showFilePreview(file, 'video-thumbnail-preview');
+            });
+        }
+        
+        // 视频文件预览
+        const videoFileInput = document.getElementById('video-file');
+        if (videoFileInput) {
+            videoFileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                window.App.admin.showFilePreview(file, 'video-file-preview');
+            });
+        }
         
         // 添加音乐表单提交处理
         const addMusicForm = document.getElementById('add-music-form');
@@ -507,9 +547,14 @@
                         
                         // 显示成功消息
                         window.App.admin.showNotification('music-upload-notification', '音乐添加成功', true);
+                        window.App.admin.showToast('音乐添加成功', true);
                         
                         // 重置表单
                         document.getElementById('add-music-form').reset();
+                        
+                        // 隐藏预览
+                        document.getElementById('music-cover-preview').style.display = 'none';
+                        document.getElementById('music-audio-preview').style.display = 'none';
                         
                         // 隐藏进度条
                         if (progressContainer) {
@@ -521,6 +566,7 @@
                     } catch (error) {
                         console.error('添加音乐失败:', error.message);
                         window.App.admin.showNotification('music-upload-notification', '添加失败: ' + error.message, false);
+                        window.App.admin.showToast('添加失败: ' + error.message, false);
                         
                         // 隐藏进度条
                         if (progressContainer) {
@@ -586,9 +632,14 @@
                         
                         // 显示成功消息
                         window.App.admin.showNotification('video-upload-notification', '视频添加成功', true);
+                        window.App.admin.showToast('视频添加成功', true);
                         
                         // 重置表单
                         document.getElementById('add-video-form').reset();
+                        
+                        // 隐藏预览
+                        document.getElementById('video-thumbnail-preview').style.display = 'none';
+                        document.getElementById('video-file-preview').style.display = 'none';
                         
                         // 隐藏进度条
                         if (progressContainer) {
@@ -600,6 +651,7 @@
                     } catch (error) {
                         console.error('添加视频失败:', error.message);
                         window.App.admin.showNotification('video-upload-notification', '添加失败: ' + error.message, false);
+                        window.App.admin.showToast('添加失败: ' + error.message, false);
                         
                         // 隐藏进度条
                         if (progressContainer) {

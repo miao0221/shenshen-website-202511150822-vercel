@@ -173,6 +173,114 @@ CREATE POLICY "仅允许管理员删除视频" ON videos
 3. 分别创建名为 `music`、`videos` 和 `images` 的存储桶
 4. 为每个存储桶设置适当的访问策略（通常设置为公开读取）
 
+#### 存储桶RLS策略设置
+
+为了确保安全性和正确的访问控制，需要为每个存储桶设置RLS策略：
+
+```sql
+-- 为存储桶启用RLS
+-- 注意：这些命令需要在Supabase SQL编辑器中执行
+
+-- 为music存储桶设置策略
+-- 允许认证用户上传文件
+CREATE POLICY "允许认证用户上传音频文件" ON storage.objects 
+FOR INSERT TO authenticated 
+WITH CHECK (bucket_id = 'music');
+
+-- 允许所有人读取音频文件
+CREATE POLICY "允许所有人读取音频文件" ON storage.objects 
+FOR SELECT TO public 
+USING (bucket_id = 'music');
+
+-- 仅允许管理员更新音频文件
+CREATE POLICY "仅允许管理员更新音频文件" ON storage.objects 
+FOR UPDATE TO authenticated 
+USING (
+  bucket_id = 'music' AND 
+  EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = auth.uid() AND is_admin = true
+  )
+);
+
+-- 仅允许管理员删除音频文件
+CREATE POLICY "仅允许管理员删除音频文件" ON storage.objects 
+FOR DELETE TO authenticated 
+USING (
+  bucket_id = 'music' AND 
+  EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = auth.uid() AND is_admin = true
+  )
+);
+
+-- 为videos存储桶设置策略
+-- 允许认证用户上传文件
+CREATE POLICY "允许认证用户上传视频文件" ON storage.objects 
+FOR INSERT TO authenticated 
+WITH CHECK (bucket_id = 'videos');
+
+-- 允许所有人读取视频文件
+CREATE POLICY "允许所有人读取视频文件" ON storage.objects 
+FOR SELECT TO public 
+USING (bucket_id = 'videos');
+
+-- 仅允许管理员更新视频文件
+CREATE POLICY "仅允许管理员更新视频文件" ON storage.objects 
+FOR UPDATE TO authenticated 
+USING (
+  bucket_id = 'videos' AND 
+  EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = auth.uid() AND is_admin = true
+  )
+);
+
+-- 仅允许管理员删除视频文件
+CREATE POLICY "仅允许管理员删除视频文件" ON storage.objects 
+FOR DELETE TO authenticated 
+USING (
+  bucket_id = 'videos' AND 
+  EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = auth.uid() AND is_admin = true
+  )
+);
+
+-- 为images存储桶设置策略
+-- 允许认证用户上传文件
+CREATE POLICY "允许认证用户上传图片文件" ON storage.objects 
+FOR INSERT TO authenticated 
+WITH CHECK (bucket_id = 'images');
+
+-- 允许所有人读取图片文件
+CREATE POLICY "允许所有人读取图片文件" ON storage.objects 
+FOR SELECT TO public 
+USING (bucket_id = 'images');
+
+-- 仅允许管理员更新图片文件
+CREATE POLICY "仅允许管理员更新图片文件" ON storage.objects 
+FOR UPDATE TO authenticated 
+USING (
+  bucket_id = 'images' AND 
+  EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = auth.uid() AND is_admin = true
+  )
+);
+
+-- 仅允许管理员删除图片文件
+CREATE POLICY "仅允许管理员删除图片文件" ON storage.objects 
+FOR DELETE TO authenticated 
+USING (
+  bucket_id = 'images' AND 
+  EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = auth.uid() AND is_admin = true
+  )
+);
+```
+
 ### 自动创建用户档案
 
 创建函数和触发器，当新用户注册时自动创建对应的 profiles 记录：
@@ -215,6 +323,7 @@ WHERE email = 'your_admin_email@example.com';
 
 1. 请确保在 Supabase 项目中正确配置了数据库表和RLS策略
 2. 确保存储桶已创建并正确配置访问权限
-3. 确保 Supabase URL 和匿名密钥在 `config.js` 中正确设置
-4. 管理员功能需要先设置管理员用户才能使用
-5. 项目使用了 Supabase CDN，在网络不稳定的环境中可能加载较慢
+3. 确保存储桶的RLS策略已正确设置
+4. 确保 Supabase URL 和匿名密钥在 `config.js` 中正确设置
+5. 管理员功能需要先设置管理员用户才能使用
+6. 项目使用了 Supabase CDN，在网络不稳定的环境中可能加载较慢
