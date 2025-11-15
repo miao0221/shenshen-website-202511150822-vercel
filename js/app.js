@@ -1,4 +1,4 @@
-// 使用IIFE包装避免全局变量污染
+                     // 使用IIFE包装避免全局变量污染
 (function() {
     // 页面加载时获取音乐和视频数据
     async function loadMediaData() {
@@ -83,10 +83,14 @@
     async function updateUIBasedOnAuthState(user) {
         const authLink = document.getElementById('auth-link');
         const adminNavItem = document.getElementById('admin-nav-item'); // 管理员导航项
+        const profileNavItem = document.getElementById('profile-nav-item'); // 个人中心导航项
         
         if (user) {
             // 用户已登录
             console.log('用户已登录:', user);
+            
+            // 显示个人中心导航项
+            profileNavItem.style.display = 'block';
             
             // 检查用户是否为管理员
             const isAdmin = await window.App.auth.checkIfAdmin(user.id);
@@ -106,6 +110,7 @@
             // 用户未登录
             console.log('用户未登录，隐藏管理员导航项');
             adminNavItem.style.display = 'none';
+            profileNavItem.style.display = 'none';
             authLink.textContent = '登录/注册';
         }
     }
@@ -206,6 +211,32 @@
                     switchContent('home');
                 });
         }
+        
+        // 特殊处理：如果目标是个人中心，则加载用户信息
+        if (target === 'profile') {
+            loadProfileData();
+        }
+    }
+    
+    // 加载个人中心数据
+    async function loadProfileData() {
+        try {
+            // 获取当前用户信息
+            const user = await window.App.auth.getCurrentUser();
+            
+            if (user) {
+                // 显示用户基本信息
+                document.getElementById('profile-username').textContent = user.email.split('@')[0];
+                document.getElementById('profile-email').textContent = user.email;
+                document.getElementById('profile-user-id').textContent = user.id;
+                
+                // 检查是否为管理员
+                const isAdmin = await window.App.auth.checkIfAdmin(user.id);
+                document.getElementById('profile-is-admin').textContent = isAdmin ? '是' : '否';
+            }
+        } catch (error) {
+            console.error('加载个人中心数据失败:', error.message);
+        }
     }
 
     // 初始化应用
@@ -294,6 +325,21 @@
                 } catch (error) {
                     // 显示无权限提示
                     alert('无权限访问管理后台: ' + error.message);
+                }
+            });
+        }
+        
+        // 个人中心退出登录按钮事件处理
+        const profileLogoutButton = document.getElementById('profile-logout-button');
+        if (profileLogoutButton) {
+            profileLogoutButton.addEventListener('click', async function(e) {
+                e.preventDefault();
+                try {
+                    // 执行登出操作
+                    await window.App.auth.signOut();
+                } catch (error) {
+                    console.error('登出失败:', error.message);
+                    alert('登出失败: ' + error.message);
                 }
             });
         }

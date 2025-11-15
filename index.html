@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+       <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -27,6 +27,7 @@
                 <li><a href="#" class="nav-link" data-target="timeline">时间轴</a></li>
                 <li><a href="#" class="nav-link" data-target="honor">荣誉墙</a></li>
                 <li><a href="#" class="nav-link" data-target="merchandise">商业及周边</a></li>
+                                <li id="profile-nav-item" style="display: none;"><a href="#" class="nav-link" data-target="profile">个人中心</a></li>
                 <li id="admin-nav-item" style="display: none;"><a href="#" class="nav-link" data-target="admin">管理员界面</a></li>
                 <li><a href="#" id="auth-link">登录/注册</a></li>
             </ul>
@@ -102,6 +103,37 @@
             <h1>商业合作及周边产品</h1>
             <div class="content-placeholder">
                 <p>商业合作及周边产品信息正在整理中，敬请期待...</p>
+            </div>
+        </section>
+
+        <!-- 个人中心内容区域 -->
+        <section id="profile-content" class="content-section">
+            <h1>个人中心</h1>
+            <div class="profile-container">
+                <div class="profile-header">
+                    <h2>用户信息</h2>
+                </div>
+                <div class="profile-info">
+                    <div class="info-item">
+                        <label>用户名:</label>
+                        <span id="profile-username"></span>
+                    </div>
+                    <div class="info-item">
+                        <label>邮箱:</label>
+                        <span id="profile-email"></span>
+                    </div>
+                    <div class="info-item">
+                        <label>用户ID:</label>
+                        <span id="profile-user-id"></span>
+                    </div>
+                    <div class="info-item">
+                        <label>管理员权限:</label>
+                        <span id="profile-is-admin"></span>
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    <button id="profile-logout-button" class="btn btn-primary">退出登录</button>
+                </div>
             </div>
         </section>
 
